@@ -19,6 +19,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -62,6 +63,8 @@ type sessionFactory struct {
 	BuildInitiators bool
 }
 
+const shortForm = "15:04:05"
+
 // Creates Session, associates with internal session registry.
 func (f sessionFactory) createSession(
 	sessionID SessionID, storeFactory MessageStoreFactory, settings *SessionSettings,
@@ -84,7 +87,10 @@ func (f sessionFactory) createSession(
 func (f sessionFactory) newSession(
 	sessionID SessionID, storeFactory MessageStoreFactory, settings *SessionSettings, logFactory LogFactory,
 	application Application) (s *session, err error) {
-	s = &session{sessionID: sessionID}
+	s = &session{
+		sessionID: sessionID,
+		stopOnce:  sync.Once{},
+	}
 
 	var validatorSettings = defaultValidatorSettings
 	if settings.HasSetting(config.ValidateFieldsOutOfOrder) {
@@ -276,6 +282,7 @@ func (f sessionFactory) newSession(
 				return
 			}
 		}
+		s.TimeZone = loc
 
 		if !settings.HasSetting(config.StartDay) && !settings.HasSetting(config.EndDay) {
 			var weekdays []time.Weekday
@@ -342,6 +349,47 @@ func (f sessionFactory) newSession(
 			}
 			s.SessionTime = sessionTime
 		}
+	}
+
+	if settings.HasSetting(config.ResetSeqTime) {
+
+		if s.TimeZone == nil {
+			loc := time.UTC
+			if settings.HasSetting(config.TimeZone) {
+				var locStr string
+				if locStr, err = settings.Setting(config.TimeZone); err != nil {
+					return
+				}
+
+				loc, err = time.LoadLocation(locStr)
+				if err != nil {
+					err = errors.Wrapf(
+						err, "problem parsing time zone '%v' for setting '%v",
+						settings.settings[config.TimeZone], config.TimeZone,
+					)
+					return
+				}
+			}
+			s.TimeZone = loc
+		}
+
+		var seqTimeStr string
+		if seqTimeStr, err = settings.Setting(config.ResetSeqTime); err != nil {
+			return
+		}
+
+		var seqTime time.Time
+		if seqTime, err = time.ParseInLocation(shortForm, seqTimeStr, s.TimeZone); err != nil {
+			err = errors.Wrapf(
+				err, "problem parsing time of day '%v' for setting '%v",
+				settings.settings[config.ResetSeqTime], config.ResetSeqTime,
+			)
+			return
+		}
+		s.EnableResetSeqTime = true
+		s.ResetSeqTime = seqTime
+	} else {
+		s.EnableResetSeqTime = false
 	}
 
 	if settings.HasSetting(config.TimeStampPrecision) {

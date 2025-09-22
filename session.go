@@ -41,6 +41,9 @@ type session struct {
 
 	// Mutex for access to toSend.
 	sendMutex sync.Mutex
+	// Mutex to prevent messages being sent when resendRequest is active
+	// Must be locked before sendMutex to prevent a potential deadlock
+	resendMutex sync.RWMutex
 
 	sessionEvent chan internal.Event
 	messageEvent chan bool
@@ -59,7 +62,8 @@ type session struct {
 	transportDataDictionary *datadictionary.DataDictionary
 	appDataDictionary       *datadictionary.DataDictionary
 
-	timestampPrecision TimestampPrecision
+	timestampPrecision      TimestampPrecision
+	lastCheckedResetSeqTime time.Time
 }
 
 func (s *session) logError(err error) {
@@ -301,6 +305,10 @@ func (s *session) sendInReplyTo(msg *Message, inReplyTo *Message) error {
 	if !s.IsLoggedOn() {
 		return s.queueForSend(msg)
 	}
+
+	// resendMutex must always be locked before sendMutex to prevent a potential deadlock
+	s.resendMutex.RLock()
+	defer s.resendMutex.RUnlock()
 
 	s.sendMutex.Lock()
 	defer s.sendMutex.Unlock()
@@ -863,7 +871,6 @@ func (s *session) onAdmin(msg interface{}) {
 }
 
 func (s *session) run() {
-	s.stopOnce = sync.Once{}
 	s.Start(s)
 	var stopChan = make(chan struct{})
 	s.stateTimer = internal.NewEventTimer(func() {
@@ -919,6 +926,7 @@ func (s *session) run() {
 
 		case now := <-ticker.C:
 			s.CheckSessionTime(s, now)
+			s.CheckResetTime(s, now)
 		}
 	}
 }

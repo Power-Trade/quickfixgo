@@ -1,3 +1,40 @@
+## 0.9.10 (August 8, 2025)
+
+### BUG FIXES
+* Send Reset if the ResetTime elapsed in between checks [#725](https://github.com/quickfixgo/quickfix/pull/725)
+
+## 0.9.9 (July 31, 2025)
+
+### BUG FIXES
+* Adds missing tz for resetseqtime without starttime endtime #723 [#723](https://github.com/quickfixgo/quickfix/pull/723)
+
+## 0.9.8 (July 21, 2025)
+
+### ENHANCEMENTS
+* Add DB name configuration [#711](https://github.com/quickfixgo/quickfix/pull/711)
+* Change ResetSeqTime to time.Time based on the config's timeZone [#712](https://github.com/quickfixgo/quickfix/pull/712)
+
+### BUG FIXES
+* Block Sends when Resend Request is active [#715](https://github.com/quickfixgo/quickfix/pull/715)
+* Fix the issue of incorrect time range calculation across days [#718](https://github.com/quickfixgo/quickfix/pull/718)
+
+## 0.9.7 (April 23, 2025)
+
+### FEATURES
+* Adds SQL, MongoDB and Composite FIX Log and LogFactory implementations, see `config/configuration.go` for details [#672](https://github.com/quickfixgo/quickfix/pull/672)
+* Adds convenience getters for session log and store [#675](https://github.com/quickfixgo/quickfix/pull/675)
+* Adds config option for ResetSeqTime [#705](https://github.com/quickfixgo/quickfix/pull/705)
+
+### ENHANCEMENTS
+* File store uses files exclusively [#680](https://github.com/quickfixgo/quickfix/pull/680)
+* Protect concurrent usage of filestore [#688](https://github.com/quickfixgo/quickfix/pull/688)
+* Support udecimal library in code generation [#700](https://github.com/quickfixgo/quickfix/pull/700)
+
+### BUG FIXES
+* Avoid unkeyed fields usage for exported struct in generated code [#683](https://github.com/quickfixgo/quickfix/pull/683)
+* Iterate messages in filestore opens a separate file to avoid deadlock [#703](https://github.com/quickfixgo/quickfix/pull/703)
+* Correct ordering in message trailer [#707](https://github.com/quickfixgo/quickfix/pull/707)
+
 ## 0.9.6 (September 20, 2024)
 
 ### ENHANCEMENTS
