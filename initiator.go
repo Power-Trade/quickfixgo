@@ -186,7 +186,7 @@ func (i *Initiator) handleConnection(session *session, tlsConfig *tls.Config, di
 			session.log.OnEventf("connected to remote address: %v", address)
 		}
 
-		msgIn = make(chan fixIn)
+		msgIn = make(chan fixIn, session.InChanCapacity)
 		msgOut = make(chan []byte)
 		if err := session.connect(msgIn, msgOut); err != nil {
 			session.log.OnEventf("Failed to initiate: %v", err)
