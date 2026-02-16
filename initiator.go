@@ -181,10 +181,8 @@ func (i *Initiator) handleConnection(session *session, tlsConfig *tls.Config, di
 		if err != nil {
 			session.log.OnEventf("Failed to connect: %v", err)
 			goto reconnect
-		} else {
-			address := netConn.RemoteAddr().String()
-			session.log.OnEventf("connected to remote address: %v", address)
 		}
+		session.log.OnEventf("connected to remote address: %v", netConn.RemoteAddr().String())
 
 		msgIn = make(chan fixIn, session.InChanCapacity)
 		msgOut = make(chan []byte)

@@ -649,6 +649,15 @@ func (s *SessionFactorySuite) TestConfigureSocketConnectAddress() {
 	}
 }
 
+func (s *SessionFactorySuite) TestConfigureSocketConnectAddressWebsocketOnly() {
+	sess := new(session)
+	s.SessionSettings.Set(config.WebsocketLocation, "wss://example.com/ws")
+
+	err := s.configureSocketConnectAddress(sess, s.SessionSettings)
+	s.Require().NoError(err)
+	s.Empty(sess.SocketConnectAddress)
+}
+
 func (s *SessionFactorySuite) TestConfigureSocketConnectAddressMulti() {
 	session := new(session)
 	s.SessionSettings.Set(config.SocketConnectHost, "127.0.0.1")

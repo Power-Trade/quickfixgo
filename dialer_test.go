@@ -42,7 +42,7 @@ func (s *DialerTestSuite) TestLoadDialerNoSettings() {
 	dialer, err := loadDialerConfig(s.settings.GlobalSettings())
 	s.Require().Nil(err)
 
-	stdDialer, ok := dialer.(*TcpDialer).ctxDialer.(*net.Dialer)
+	stdDialer, ok := dialer.(*TCPDialer).ctxDialer.(*net.Dialer)
 	s.Require().True(ok)
 	s.Require().NotNil(stdDialer)
 	s.Zero(stdDialer.Timeout)
@@ -53,7 +53,7 @@ func (s *DialerTestSuite) TestLoadDialerWithTimeout() {
 	dialer, err := loadDialerConfig(s.settings.GlobalSettings())
 	s.Require().Nil(err)
 
-	stdDialer, ok := dialer.(*TcpDialer).ctxDialer.(*net.Dialer)
+	stdDialer, ok := dialer.(*TCPDialer).ctxDialer.(*net.Dialer)
 	s.Require().True(ok)
 	s.Require().NotNil(stdDialer)
 	s.EqualValues(10*time.Second, stdDialer.Timeout)
@@ -73,7 +73,7 @@ func (s *DialerTestSuite) TestLoadDialerSocksProxy() {
 	s.Require().Nil(err)
 	s.Require().NotNil(dialer)
 
-	_, ok := dialer.(*TcpDialer).ctxDialer.(*net.Dialer)
+	_, ok := dialer.(*TCPDialer).ctxDialer.(*net.Dialer)
 	s.Require().False(ok)
 }
 
@@ -89,4 +89,23 @@ func (s *DialerTestSuite) TestLoadDialerSocksProxyInvalidPort() {
 	s.settings.GlobalSettings().Set(config.ProxyHost, "localhost")
 	_, err := loadDialerConfig(s.settings.GlobalSettings())
 	s.Require().NotNil(err)
+}
+
+func (s *DialerTestSuite) TestLoadDialerWebsocket() {
+	s.settings.GlobalSettings().Set(config.WebsocketLocation, "ws://example.com/ws")
+	s.settings.GlobalSettings().Set(config.WebsocketOrigin, "http://localhost/")
+
+	dialer, err := loadDialerConfig(s.settings.GlobalSettings())
+	s.Require().NoError(err)
+
+	wsDialer, ok := dialer.(*WebsocketDialer)
+	s.Require().True(ok)
+	s.Equal("ws://example.com/ws", wsDialer.wsConfig.Location.String())
+	s.Equal("http://localhost/", wsDialer.wsConfig.Origin.String())
+}
+
+func (s *DialerTestSuite) TestLoadDialerWebsocketMissingOrigin() {
+	s.settings.GlobalSettings().Set(config.WebsocketLocation, "ws://example.com/ws")
+	_, err := loadDialerConfig(s.settings.GlobalSettings())
+	s.Require().Error(err)
 }

@@ -33,11 +33,11 @@ type Dialer interface {
 	Dial(ctx context.Context, session *session, attempt int, tlsConfig *tls.Config) (net.Conn, error)
 }
 
-type TcpDialer struct {
+type TCPDialer struct {
 	ctxDialer proxy.ContextDialer
 }
 
-func (d *TcpDialer) Dial(ctx context.Context, session *session, attempt int, tlsConfig *tls.Config) (conn net.Conn, err error) {
+func (d *TCPDialer) Dial(ctx context.Context, session *session, attempt int, tlsConfig *tls.Config) (conn net.Conn, err error) {
 	address := session.SocketConnectAddress[attempt%len(session.SocketConnectAddress)]
 	session.log.OnEventf("Connecting to: %v", address)
 
@@ -107,7 +107,7 @@ func loadDialerConfig(settings *SessionSettings) (dialer Dialer, err error) {
 	}
 
 	stdDialer := &net.Dialer{}
-	dialer = &TcpDialer{
+	dialer = &TCPDialer{
 		ctxDialer: stdDialer,
 	}
 	if settings.HasSetting(config.SocketTimeout) {
@@ -163,7 +163,7 @@ func loadDialerConfig(settings *SessionSettings) (dialer Dialer, err error) {
 		}
 
 		if contextDialer, ok := proxyDialer.(proxy.ContextDialer); ok {
-			dialer = &TcpDialer{
+			dialer = &TCPDialer{
 				ctxDialer: contextDialer,
 			}
 		} else {
